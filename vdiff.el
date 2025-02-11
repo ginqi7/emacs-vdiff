@@ -56,7 +56,7 @@
 (require 'cl-lib)
 (eval-when-compile (require 'subr-x))
 (require 'diff-mode)
-(require 'hydra)
+
 (require 'smerge-mode)
 
 (defvar vdiff-mode)
@@ -1106,12 +1106,12 @@ of a \"word\"."
                 (substring-no-properties
                  first-line-text 0 (- width (length start)))
                 "\n")
-        (concat start
-                first-line-text
-                (make-string
-                 (- width (length start) (length first-line-text))
-                 ?-)
-                "\n"))))
+      (concat start
+              first-line-text
+              (make-string
+               (- width (length start) (length first-line-text))
+               ?-)
+              "\n"))))
 
 (defun vdiff--make-fold (buffer range)
   (with-current-buffer buffer
@@ -1608,8 +1608,8 @@ the current one."
     (let ((target-line
            (car
             (vdiff--translate-line line from-buffer (vdiff--buffer-p)))))
-         (when target-line
-           (vdiff--move-to-line target-line)))))
+      (when target-line
+        (vdiff--move-to-line target-line)))))
 
 (defun vdiff-restore-windows ()
   "Restore initial window configuration."
@@ -1899,7 +1899,7 @@ with non-nil USE-FOLDS."
 
 (defun vdiff--init-session
     (buffer-a buffer-b
-     &optional buffer-c on-quit prior-window-config kill-buffers-on-quit)
+              &optional buffer-c on-quit prior-window-config kill-buffers-on-quit)
   (make-vdiff-session
    :buffers (vdiff--non-nil-list buffer-a buffer-b buffer-c)
    :process-buffer (generate-new-buffer-name " *vdiff* ")
@@ -1924,7 +1924,7 @@ arguments."
   (interactive
    (let* ((file-a (read-file-name "File 1: "))
           (default-directory
-            (file-name-directory file-a)))
+           (file-name-directory file-a)))
      (list
       file-a
       (read-file-name
@@ -1968,7 +1968,7 @@ versa)."
 ;;;###autoload
 (defun vdiff-buffers
     (buffer-a buffer-b
-     &optional rotate on-quit restore-windows-on-quit kill-buffers-on-quit)
+              &optional rotate on-quit restore-windows-on-quit kill-buffers-on-quit)
   "Start a vdiff session. If called interactively, you will be
 asked to select two buffers. ROTATE adjusts the buffer's
 initial layout. A prefix argument can be used to set this
@@ -2036,7 +2036,7 @@ Should take the arguments (BUFFER-A BUFFER-B BUFFER-C)."
 ;;;###autoload
 (defun vdiff-buffers3
     (buffer-a buffer-b buffer-c
-     &optional on-quit restore-windows-on-quit kill-buffers-on-quit)
+              &optional on-quit restore-windows-on-quit kill-buffers-on-quit)
   "Start a vdiff session. If called interactively, you will be
 asked to select two buffers. ON-QUIT is a function to run on
 exiting the vdiff session. It is called with the three vdiff
@@ -2099,9 +2099,9 @@ function for ON-QUIT to do something useful with the result."
                            (smerge--get-marker smerge-end-re "OTHER")
                            "*")))
            (ancestor (generate-new-buffer
-                  (concat "*" filename " "
-                          (smerge--get-marker smerge-end-re "ANCESTOR")
-                          "*")))
+                      (concat "*" filename " "
+                              (smerge--get-marker smerge-end-re "ANCESTOR")
+                              "*")))
            ancestor-used merge-buffer)
       (with-current-buffer mine
         (buffer-disable-undo)
@@ -2162,7 +2162,7 @@ you will be asked to select two files."
   (interactive
    (let* ((file-a (read-file-name "File 1: "))
           (default-directory
-            (file-name-directory file-a))
+           (file-name-directory file-a))
           (file-b
            (read-file-name
             (format "[1:%s] File 2: "
@@ -2187,7 +2187,7 @@ nothing to revert then this command fails."
   ;; Taken from `ediff-current-file'
   (unless (or (not (eq revert-buffer-function #'revert-buffer--default))
               (not (eq revert-buffer-insert-file-contents-function
-               #'revert-buffer-insert-file-contents--default-function))
+                       #'revert-buffer-insert-file-contents--default-function))
               (and buffer-file-number
                    (or (buffer-modified-p)
                        (not (verify-visited-file-modtime
@@ -2368,54 +2368,6 @@ enabled automatically if `vdiff-lock-scrolling' is non-nil."
     ("-w" "all (-w)")
     ("-b" "space changes (-b)")
     ("-B" "blank lines (-B)")))
-
-(defhydra vdiff-toggle-hydra (nil nil :hint nil)
-  (concat (propertize
-           "\
- Toggles"
-           'face 'header-line)
-          "
- _c_ ignore case (current: %s(vdiff--current-case))
- _w_ ignore whitespace (current: %s(vdiff--current-whitespace))
- _q_ back to main hydra")
-
-  ("c" vdiff-toggle-case)
-  ("w" vdiff-toggle-whitespace)
-  ("q" vdiff-hydra/body :exit t))
-
-(defhydra vdiff-hydra (nil nil :hint nil :foreign-keys run)
-  (concat (propertize
-           "\
- Navigation^^^^          Refine^^   Transmit^^^^             Folds^^^^            Other^^^^                 "
-           'face 'header-line)
-          "
- _n_/_N_ next hunk/fold  _f_ this   _s_/_S_ send (+step)     _o_/_O_ open (all)   _i_ ^ ^ toggles
- _p_/_P_ prev hunk/fold  _F_ all    _r_/_R_ receive (+step)  _c_/_C_ close (all)  _u_ ^ ^ update diff
- _g_^ ^  switch buffers  _x_ clear  ^ ^ ^ ^                  _t_ ^ ^ close other  _w_ ^ ^ save buffers
- ^ ^^ ^                  ^ ^        ^ ^ ^ ^                  ^ ^ ^ ^              _q_/_Q_ quit hydra/vdiff
- ignore case: %s(vdiff--current-case) | ignore whitespace: %s(vdiff--current-whitespace)")
-  ("n" vdiff-next-hunk)
-  ("p" vdiff-previous-hunk)
-  ("N" vdiff-next-fold)
-  ("P" vdiff-previous-fold)
-  ("g" vdiff-switch-buffer)
-  ("s" vdiff-send-changes)
-  ("S" vdiff-send-changes-and-step)
-  ("r" vdiff-receive-changes)
-  ("R" vdiff-receive-changes-and-step)
-  ("o" vdiff-open-fold)
-  ("O" vdiff-open-all-folds)
-  ("c" vdiff-close-fold)
-  ("C" vdiff-close-all-folds)
-  ("t" vdiff-close-other-folds)
-  ("u" vdiff-refresh)
-  ("w" vdiff-save-buffers)
-  ("f" vdiff-refine-this-hunk)
-  ("F" vdiff-refine-all-hunks)
-  ("x" vdiff-remove-refinements-in-hunk)
-  ("i" vdiff-toggle-hydra/body :exit t)
-  ("q" nil :exit t)
-  ("Q" vdiff-quit :exit t))
 
 (provide 'vdiff)
 ;;; vdiff.el ends here
